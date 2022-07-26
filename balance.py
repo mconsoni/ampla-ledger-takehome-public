@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from math import floor
+from math import ceil
 
 
 class Advance:
@@ -27,6 +27,7 @@ class Advance:
 		self.creation_date = creation_date
 		self.initial_amount = amount
 		self.remaining_amount = remaining_amount if remaining_amount is not None else amount
+		self.remaining_interest = 0
 		self.daily_interest_rate = daily_interest_rate
 		self.last_interest_payment_date = creation_date
 
@@ -48,7 +49,7 @@ class Advance:
 			to_date: date formatted as ISO string
 		"""
 		days = self.__days_from_last_interest_payment(to_date)
-		return days * self.interest_by_day()
+		return days * self.interest_by_day() + self.remaining_interest
 
 	def interest_by_day(self):
 		return self.remaining_amount * self.daily_interest_rate
@@ -95,13 +96,15 @@ class Advance:
 		interest = self.interest_payable_balance(payment_date)
 		if amount >= interest:
 			self.last_interest_payment_date = date.fromisoformat(payment_date)
+			self.remaining_interest = 0
 			return amount - interest, interest
 		else:
 			interest_by_day = self.interest_by_day()
-			interest_paid_in_days = floor(amount / interest_by_day)
+			interest_paid_in_days = ceil(amount / interest_by_day)
 			self.last_interest_payment_date += timedelta(days=interest_paid_in_days)
 			interest_amount = interest_paid_in_days * interest_by_day
-			return amount - interest_amount, interest_amount
+			self.remaining_interest = interest_amount - amount
+			return 0, amount
 
 	def is_close(self):
 		return self.remaining_amount == 0
