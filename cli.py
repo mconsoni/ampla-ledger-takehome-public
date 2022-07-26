@@ -110,6 +110,21 @@ def balances(ctx: Dict, end_date: str = None) -> None:
         result = cursor.execute("select * from events order by date_created asc;")
         events = result.fetchall()
         # TODO: FIXME Run interest calculation.
+        # FIXME: MCONSONI MODS
+        from balance import Balance
+        from datetime import date
+        balance = Balance(daily_interest_rate=0.00035)
+        for event in events:
+            # event: (0: id, 1: type, 2: amount, 3: date_created)
+            # Add the date check here because I cannot change above FIXME line :(
+            # I would change the SQL query
+            if date.fromisoformat(event[3]) > date.fromisoformat(end_date):
+                break
+            if event[1] == "advance":
+                balance.add_advance(event[3], event[2])
+            elif event[1] == "payment":
+                balance.add_payment(event[3], event[2])
+        # FIXME: END MCONSONI MODS
 
     click.echo("Advances:")
     click.echo("----------------------------------------------------------")
@@ -117,6 +132,20 @@ def balances(ctx: Dict, end_date: str = None) -> None:
     click.echo("{0:>10}{1:>11}{2:>17}{3:>20}".format("Identifier", "Date", "Initial Amt", "Current Balance"))
 
     # TODO: FIXME Print each advance row and relevant advance statistics
+    # FIXME: MCONSONI MODS
+    for idx, advance in enumerate(balance.advances, 1):
+        click.echo("{0:>10}{1:>11}{2:>17.2f}{3:>20.2f}".format(
+            idx,
+            advance.creation_date.isoformat(),
+            advance.initial_amount,
+            advance.remaining_amount
+        ))
+
+    overall_advance_balance = balance.advances_balance()
+    overall_interest_payable_balance = balance.interest_payable_balance(end_date)
+    overall_interest_paid = balance.interest_paid
+    overall_payments_for_future = balance.balance
+    # FIXME: END MCONSONI MODS
 
     # print summary statistics
     # NOTE: These prints adhere to the format spec.
